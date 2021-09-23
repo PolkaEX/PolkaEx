@@ -839,7 +839,7 @@ contract PrivateLaunchpad is Ownable, Pausable, WhitelistedRole {
     using Address for address;
 
     //Whether to whitelist
-    bool public constant isWhite = true;
+    bool external constant isWhite = true;
 
     uint256 public constant rate = 350; //1000
     uint256 public constant lockRate = 500; // 1000

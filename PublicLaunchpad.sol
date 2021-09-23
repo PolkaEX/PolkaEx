@@ -745,7 +745,7 @@ contract PublicLaunchpad is Ownable, Pausable {
     using Address for address;
 
     //Whether to whitelist
-    bool public constant isWhite = false;
+    bool external constant isWhite = false;
 
     uint256 public constant rate = 350; //1000
     uint256 public constant lockRate = 500; // 1000

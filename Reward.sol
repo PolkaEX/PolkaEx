@@ -853,7 +853,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public unstakingPeriod = 5 days;
-    uint256 public rewardIndex = 0;
+    uint256 external rewardIndex = 0;
     uint256 private _poolId = 0;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
