@@ -15,7 +15,7 @@
 
 */
 
-pragma solidity 0.5.2;
+pragma solidity >0.5.2;
 pragma experimental ABIEncoderV2;
 
 // File: openzeppelin-solidity/contracts/ownership/Ownable.sol
@@ -25,7 +25,7 @@ pragma experimental ABIEncoderV2;
  * @dev The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
-contract Ownable {
+abstract contract Ownable {
     address private _owner;
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -34,7 +34,7 @@ contract Ownable {
      * @dev The Ownable constructor sets the original `owner` of the contract to the sender
      * account.
      */
-    constructor () internal {
+    constructor ()  {
         _owner = msg.sender;
         emit OwnershipTransferred(address(0), _owner);
     }
@@ -255,16 +255,16 @@ contract PkexTokenClaim is Ownable {
     event TokenVestingAdded(uint256 indexed vestingId, address indexed beneficiary, uint256 amount);
     event TokenVestingRemoved(uint256 indexed vestingId, address indexed beneficiary, uint256 amount);
 
-    constructor(IERC20 _token) public {
-        require(address(_token) != address(0x0), "Matic token address is not valid");
+    constructor(IERC20 _token) {
+        require(address(_token) != address(0x0), "Invalid PKEX token address");
         pkexToken = _token;
     }
 
-    function token() public view returns (IERC20) {
+    function token() external view returns (IERC20) {
         return pkexToken;
     }
 
-    function myVestings() public view returns  (Vesting[] memory) {
+    function myVestings() external view returns  (Vesting[] memory) {
         return vestings[msg.sender];
     }
     function myTokens() public view  returns(uint256 total, uint256 claimed, uint256 available, uint256 unclaimed){
@@ -282,7 +282,7 @@ contract PkexTokenClaim is Ownable {
         }
     }
     
-    function releaseAll() public {
+    function releaseAll() external {
         Vesting[] storage _vestings  = vestings[msg.sender];
         (,,uint256 available,) = myTokens();
         require(available > 0,  'No token available to claim');
@@ -298,7 +298,7 @@ contract PkexTokenClaim is Ownable {
         emit TokenVestingReleased(0, msg.sender, available);
     }
     
-    function myNextRelease()  public view returns(Vesting memory){
+    function myNextRelease()  external view returns(Vesting memory vesting){
         Vesting[] memory _vestings = vestings[msg.sender];
         uint256 nextRelease = 0;
         uint256 index = 0;
@@ -309,10 +309,10 @@ contract PkexTokenClaim is Ownable {
            }
         }
         
-        if(nextRelease > 0 ) return _vestings[index];
+        if(nextRelease > 0 ) vesting =  _vestings[index];
     }
 
-    function removeVesting(uint256 _vestingId) public onlyOwner {
+    function removeVesting(uint256 _vestingId) external onlyOwner {
         Vesting[] storage _vestings  = vestings[msg.sender];
         uint256 index = 0;
       
@@ -333,8 +333,9 @@ contract PkexTokenClaim is Ownable {
         emit TokenVestingRemoved(_vestingId, msg.sender, vesting.amount);
     }
     
-    function addVesting(address _beneficiary, uint256 _releaseTime, uint256 _amount) private onlyOwner{
+    function addVesting(address _beneficiary, uint256 _releaseTime, uint256 _amount) external onlyOwner{
         _addVesting( _beneficiary,  _releaseTime, _amount, true);
+        Tokenamount = Tokenamount.add(_amount);
     }
 
     function _addVesting(address _beneficiary, uint256 _releaseTime, uint256 _amount, bool requireTransfer) private onlyOwner{
@@ -357,13 +358,13 @@ contract PkexTokenClaim is Ownable {
         emit TokenVestingAdded(vestingId, _beneficiary, _amount);
     }
 
-    //Muti Function
+    //Multi Function
     //    [address1],[time1,time2,time3],[amount1,amount2,amount3]
     //    [address2],[time1,time2,time3],[amount1,amount2,amount3]
     //    [address3],[time1,time2,time3],[amount1,amount2,amount3]
 
-    function addMutiVestingInOneAddress(address _beneficiary, uint256[] memory _releaseTimes, uint256[] memory  _amounts) public onlyOwner {
-        require(_releaseTimes.length > 0 && _releaseTimes.length == _amounts.length, 'invalid parameters.');
+    function addMultiVestingInOneAddress(address _beneficiary, uint256[] memory _releaseTimes, uint256[] memory  _amounts) external onlyOwner {
+        require(_releaseTimes.length > 0 && _releaseTimes.length == _amounts.length, 'Invalid parameter: releaseTimes');
 
         uint256 _total = 0;
         for (uint256 index = 0; index < _releaseTimes.length; index++) {
@@ -379,8 +380,8 @@ contract PkexTokenClaim is Ownable {
     
     
    // [address1,address2,address3,address1,address2,address3,address1,address2,address3],[time1,time1,time1,time2,time2,time2,time3,time3,time3],[amount1,amount1,amount1,amount2,amount2,amount2,amount3,amount3,amount3]
-    function addMutiVestingInMutiAddress(address[] memory  _beneficiaries, uint256[] memory _releaseTimes, uint256[] memory _amounts) public onlyOwner {
-        require(_beneficiaries.length == _releaseTimes.length && _beneficiaries.length == _amounts.length);
+    function addMultiVestingInMultiAddress(address[] memory  _beneficiaries, uint256[] memory _releaseTimes, uint256[] memory _amounts) external onlyOwner {
+        require(_beneficiaries.length == _releaseTimes.length && _beneficiaries.length == _amounts.length, 'Invalid parameter: array length must be the same.');
 
         uint256 _total = 0;
         for (uint256 index = 0; index < _beneficiaries.length; index++) {
@@ -422,13 +423,13 @@ contract PkexTokenClaim is Ownable {
         emit TokenVestingReleased(_vestingId, msg.sender, vesting.amount);
     }
 
-    function mutiRelease(uint256[] memory _vestingIds ) public {
+    function multiRelease(uint256[] memory _vestingIds ) external {
         for (uint256 index = 0; index < _vestingIds.length; index++) {
             release(_vestingIds[index]);
         }
     }
 
-    function retrieveExcessTokens(uint256 _amount) public onlyOwner {
+    function retrieveExcessTokens(uint256 _amount) external onlyOwner {
         require(_amount <= pkexToken.balanceOf(address(this)).sub(tokensToVest), INSUFFICIENT_BALANCE);
         pkexToken.safeTransfer(owner(), _amount);
     }

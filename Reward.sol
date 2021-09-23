@@ -1,4 +1,19 @@
-// SPDX-License-Identifier: MIT
+/**
+ *Submitted for verification at Etherscan.io on 2021-04-29
+ */
+
+/**
+
+██████╗  ██████╗ ██╗     ██╗  ██╗ █████╗ ███████╗██╗  ██╗
+██╔══██╗██╔═══██╗██║     ██║ ██╔╝██╔══██╗██╔════╝╚██╗██╔╝
+██████╔╝██║   ██║██║     █████╔╝ ███████║█████╗   ╚███╔╝
+██╔═══╝ ██║   ██║██║     ██╔═██╗ ██╔══██║██╔══╝   ██╔██╗
+██║     ╚██████╔╝███████╗██║  ██╗██║  ██║███████╗██╔╝ ██╗
+╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+
+                     www.polkaex.io
+
+*/
 
 pragma solidity >=0.6.0 <0.8.0;
 
@@ -838,10 +853,12 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public unstakingPeriod = 5 days;
+    uint256 public rewardIndex = 0;
     uint256 private _poolId = 0;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
+    mapping(address => uint256) public unstakeTime;
     mapping(uint256 => PoolInfo) public pools;
 
     uint256 private _totalSupply;
@@ -866,6 +883,13 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         address _stakingToken,
         uint256 _rewardsDuration
     ) public {
+        requrie(
+            _rewardsDistribution != address(0),
+            "Invalid distribution address"
+        );
+        requrie(_rewardsToken != address(0), "Invalid rewards token address");
+        requrie(_stakingToken != address(0), "Invalid staking token address");
+        require(_rewardsDuration > 1 minutes, "Invalid rewards duration");
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
         rewardsDistribution = _rewardsDistribution;
@@ -875,7 +899,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     /* ========== VIEWS ========== */
 
     function myStakeInfo()
-        public
+        external
         view
         returns (
             uint256 _staked,
@@ -900,7 +924,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken() public view returns (uint256) {
+    function rewardPerToken() external view returns (uint256) {
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }
@@ -914,7 +938,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
             );
     }
 
-    function earned(address account) public view returns (uint256) {
+    function earned(address account) external view returns (uint256) {
         return
             _balances[account]
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
@@ -927,35 +951,40 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
-    
-    function stake(uint256 amount) external nonReentrant updateReward(msg.sender) {
+
+    function stake(uint256 amount)
+        external
+        nonReentrant
+        updateReward(msg.sender)
+    {
         require(amount > 0, "Cannot stake 0");
         _totalSupply = _totalSupply.add(amount);
-        
+
         // update info
         PoolInfo storage pool = pools[_poolId];
         pool.totalStaked = pool.totalStaked.add(amount);
-        
+
         if (_balances[msg.sender] == 0)
             pool.totalAddresses = pool.totalAddresses.add(1);
-            
+
         _balances[msg.sender] = _balances[msg.sender].add(amount);
         stakingToken.safeTransferFrom(msg.sender, address(this), amount);
-        
-  
+
         emit Staked(msg.sender, amount);
     }
-    
-    function getTotalRewarded() external view returns(uint256 totalRewarded) {
-        for(uint256 i = 1; i <= _poolId; i = i.add(1)){
+
+    function getTotalRewarded() external view returns (uint256 totalRewarded) {
+        for (uint256 i = 1; i <= _poolId; i = i.add(1)) {
             PoolInfo memory pool = pools[i];
-            if(pool.from > block.timestamp) continue;
-            if(pool.to  <=  block.timestamp) {
+            if (pool.from > block.timestamp) break;
+            if (pool.to <= block.timestamp) {
                 totalRewarded = totalRewarded.add(pool.totalRewards);
                 continue;
             }
-            
-            uint256 rewards = pool.rewardRate.mul(block.timestamp.sub(pool.from));
+
+            uint256 rewards = pool.rewardRate.mul(
+                block.timestamp.sub(pool.from)
+            );
             totalRewarded = totalRewarded.add(rewards);
         }
     }
@@ -974,7 +1003,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     }
 
     function unstake(uint256 amount)
-        public
+        external
         nonReentrant
         updateReward(msg.sender)
     {
@@ -983,6 +1012,9 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         _lockedBalances[msg.sender] = _lockedBalances[msg.sender].add(amount);
         _lastUpdateTime[msg.sender] = block.timestamp;
+        unstakeTime[msg.sender] = _lastUpdateTime[msg.sender].add(
+            unstakingPeriod
+        );
 
         PoolInfo storage pool = pools[_poolId];
         if (pool.totalStaked > amount)
@@ -999,7 +1031,12 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
             block.timestamp.sub(_lastUpdateTime[msg.sender]) > unstakingPeriod,
             "have no token to claim"
         );
-        stakingToken.safeTransfer(msg.sender, _lockedBalances[msg.sender]);
+        safeTransferToken(
+            stakingToken,
+            address(this),
+            msg.sender,
+            _lockedBalances[msg.sender]
+        );
         _lockedBalances[msg.sender] = 0;
         getReward();
     }
@@ -1058,6 +1095,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         periodFinish = block.timestamp.add(rewardsDuration);
 
         _poolId = _poolId.add(1);
+        rewardIndex = _poolId;
         // Add to pools
         PoolInfo memory prev = pools[_poolId.sub(1)];
         uint256 from = prev.to == 0 ? block.timestamp : prev.to;
@@ -1079,6 +1117,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         address to,
         uint256 tokenAmount
     ) external onlyRewardsDistribution {
+        requrie(tokenAddress != address(0), "Invalid token address");
         require(
             tokenAddress != address(stakingToken),
             "Cannot withdraw the staking token"
@@ -1092,8 +1131,24 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         emit Recovered(tokenAddress, to, tokenAmount);
     }
 
-    function setUnstakePeriod(uint256 _period) public onlyRewardsDistribution {
+    function setUnstakePeriod(uint256 _period)
+        external
+        onlyRewardsDistribution
+    {
+        uint256 prevPeriod = unstakingPeriod;
         unstakingPeriod = _period;
+        emit UnstakePeriodUpdated(prevPeriod, _period);
+    }
+
+    function safeTransferToken(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 amount
+    ) private {
+        uint256 balance = token.balanceOf(from);
+        if (balance >= amount) token.safeTransferFrom(from, to, amount);
+        else token.safeTransferFrom(from, to, balance);
     }
 
     /* ========== MODIFIERS ========== */
@@ -1120,6 +1175,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         uint256 amount
     );
     event EmergencyWithdraw(address indexed user, uint256 amount);
+    event UnstakePeriodUpdated(uint256 oldValue, uint256 newValue);
 }
 
 pragma solidity ^0.6.0;

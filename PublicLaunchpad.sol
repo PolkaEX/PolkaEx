@@ -1,6 +1,6 @@
 /**
  *Submitted for verification at Etherscan.io on 2021-04-29
-*/
+ */
 
 /**
 
@@ -15,8 +15,7 @@
 
 */
 
-pragma solidity ^0.5.0;
-
+pragma solidity >0.5.0;
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -28,14 +27,15 @@ pragma solidity ^0.5.0;
  *
  * This contract is only required for intermediate, library-like contracts.
  */
-contract Context {
+abstract contract Context {
     // Empty internal constructor, to prevent people from mistakenly deploying
     // an instance of this contract, which should be used via inheritance.
-    constructor () internal { }
+    constructor() {}
+
     // solhint-disable-previous-line no-empty-blocks
 
     function _msgSender() internal view returns (address payable) {
-        return msg.sender;
+        return payable(msg.sender);
     }
 
     function _msgData() internal view returns (bytes memory) {
@@ -53,15 +53,18 @@ contract Context {
  * `onlyOwner`, which can be applied to your functions to restrict their use to
  * the owner.
  */
-contract Ownable is Context {
+abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor () internal {
+    constructor() {
         address msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
@@ -113,13 +116,14 @@ contract Ownable is Context {
      * @dev Transfers ownership of the contract to a new account (`newOwner`).
      */
     function _transferOwnership(address newOwner) internal {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
     }
 }
-
-
 
 /**
  * @dev Collection of functions related to the address type
@@ -133,7 +137,7 @@ library Address {
      * It is unsafe to assume that an address for which this function returns
      * false is an externally-owned account (EOA) and not a contract.
      *
-     * Among others, `isContract` will return false for the following 
+     * Among others, `isContract` will return false for the following
      * types of addresses:
      *
      *  - an externally-owned account
@@ -149,7 +153,9 @@ library Address {
         bytes32 codehash;
         bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
-        assembly { codehash := extcodehash(account) }
+        assembly {
+            codehash := extcodehash(account)
+        }
         return (codehash != accountHash && codehash != 0x0);
     }
 
@@ -159,8 +165,12 @@ library Address {
      *
      * _Available since v2.4.0._
      */
-    function toPayable(address account) internal pure returns (address payable) {
-        return address(uint160(account));
+    function toPayable(address account)
+        internal
+        pure
+        returns (address payable)
+    {
+        return payable(address(uint160(account)));
     }
 
     /**
@@ -182,11 +192,17 @@ library Address {
      * _Available since v2.4.0._
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+        require(
+            address(this).balance >= amount,
+            "Address: insufficient balance"
+        );
 
         // solhint-disable-next-line avoid-call-value
-        (bool success, ) = recipient.call.value(amount)("");
-        require(success, "Address: unable to send value, recipient may have reverted");
+        (bool success, ) = recipient.call{value: amount}("");
+        require(
+            success,
+            "Address: unable to send value, recipient may have reverted"
+        );
     }
 }
 
@@ -203,33 +219,83 @@ library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
 
-    function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    function safeTransfer(
+        IERC20 token,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transfer.selector, to, value)
+        );
     }
 
-    function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
+    function safeTransferFrom(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
+        );
     }
 
-    function safeApprove(IERC20 token, address spender, uint256 value) internal {
+    function safeApprove(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. To increase and decrease it, use
         // 'safeIncreaseAllowance' and 'safeDecreaseAllowance'
         // solhint-disable-next-line max-line-length
-        require((value == 0) || (token.allowance(address(this), spender) == 0),
+        require(
+            (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(token.approve.selector, spender, value)
+        );
     }
 
-    function safeIncreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(value);
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeIncreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).add(
+            value
+        );
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
-    function safeDecreaseAllowance(IERC20 token, address spender, uint256 value) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(value, "SafeERC20: decreased allowance below zero");
-        callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
+    function safeDecreaseAllowance(
+        IERC20 token,
+        address spender,
+        uint256 value
+    ) internal {
+        uint256 newAllowance = token.allowance(address(this), spender).sub(
+            value,
+            "SafeERC20: decreased allowance below zero"
+        );
+        callOptionalReturn(
+            token,
+            abi.encodeWithSelector(
+                token.approve.selector,
+                spender,
+                newAllowance
+            )
+        );
     }
 
     /**
@@ -253,13 +319,16 @@ library SafeERC20 {
         (bool success, bytes memory returndata) = address(token).call(data);
         require(success, "SafeERC20: low-level call failed");
 
-        if (returndata.length > 0) { // Return data is optional
+        if (returndata.length > 0) {
+            // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
+            require(
+                abi.decode(returndata, (bool)),
+                "SafeERC20: ERC20 operation did not succeed"
+            );
         }
     }
 }
-
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -315,7 +384,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
 
@@ -373,7 +446,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         // Solidity only automatically asserts when dividing by 0
         require(b > 0, errorMessage);
         uint256 c = a / b;
@@ -410,7 +487,11 @@ library SafeMath {
      *
      * _Available since v2.4.0._
      */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
     }
@@ -438,7 +519,9 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -447,7 +530,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -465,6 +551,8 @@ interface IERC20 {
      */
     function approve(address spender, uint256 amount) external returns (bool);
 
+    // function unapprove(address spender, bytes32 identifier) returns (bool success) {}
+
     /**
      * @dev Moves `amount` tokens from `sender` to `recipient` using the
      * allowance mechanism. `amount` is then deducted from the caller's
@@ -474,7 +562,11 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
 
     /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
@@ -488,7 +580,11 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
 /**
@@ -497,7 +593,7 @@ interface IERC20 {
  */
 library Roles {
     struct Role {
-        mapping (address => bool) bearer;
+        mapping(address => bool) bearer;
     }
 
     /**
@@ -520,13 +616,17 @@ library Roles {
      * @dev Check if an account has this role.
      * @return bool
      */
-    function has(Role storage role, address account) internal view returns (bool) {
+    function has(Role storage role, address account)
+        internal
+        view
+        returns (bool)
+    {
         require(account != address(0), "Roles: account is the zero address");
         return role.bearer[account];
     }
 }
 
-contract PauserRole is Context {
+abstract contract PauserRole is Context {
     using Roles for Roles.Role;
 
     event PauserAdded(address indexed account);
@@ -534,12 +634,15 @@ contract PauserRole is Context {
 
     Roles.Role private _pausers;
 
-    constructor () internal {
+    constructor() {
         _addPauser(_msgSender());
     }
 
     modifier onlyPauser() {
-        require(isPauser(_msgSender()), "PauserRole: caller does not have the Pauser role");
+        require(
+            isPauser(_msgSender()),
+            "PauserRole: caller does not have the Pauser role"
+        );
         _;
     }
 
@@ -575,7 +678,7 @@ contract PauserRole is Context {
  * the functions of your contract. Note that they will not be pausable by
  * simply including this module, only once the modifiers are put in place.
  */
-contract Pausable is Context, PauserRole {
+abstract contract Pausable is Context, PauserRole {
     /**
      * @dev Emitted when the pause is triggered by a pauser (`account`).
      */
@@ -592,7 +695,7 @@ contract Pausable is Context, PauserRole {
      * @dev Initializes the contract in unpaused state. Assigns the Pauser role
      * to the deployer.
      */
-    constructor () internal {
+    constructor() {
         _paused = false;
     }
 
@@ -636,181 +739,119 @@ contract Pausable is Context, PauserRole {
     }
 }
 
-/**
- * @title WhitelistAdminRole
- * @dev WhitelistAdmins are responsible for assigning and removing Whitelisted accounts.
- */
-contract WhitelistAdminRole is Context {
-    using Roles for Roles.Role;
-
-    event WhitelistAdminAdded(address indexed account);
-    event WhitelistAdminRemoved(address indexed account);
-
-    Roles.Role private _whitelistAdmins;
-
-    constructor () internal {
-        _addWhitelistAdmin(_msgSender());
-    }
-
-    modifier onlyWhitelistAdmin() {
-        require(isWhitelistAdmin(_msgSender()), "WhitelistAdminRole: caller does not have the WhitelistAdmin role");
-        _;
-    }
-
-    function isWhitelistAdmin(address account) public view returns (bool) {
-        return _whitelistAdmins.has(account);
-    }
-
-    function addWhitelistAdmin(address account) public onlyWhitelistAdmin {
-        _addWhitelistAdmin(account);
-    }
-
-    function renounceWhitelistAdmin() public {
-        _removeWhitelistAdmin(_msgSender());
-    }
-
-    function _addWhitelistAdmin(address account) internal {
-        _whitelistAdmins.add(account);
-        emit WhitelistAdminAdded(account);
-    }
-
-    function _removeWhitelistAdmin(address account) internal {
-        _whitelistAdmins.remove(account);
-        emit WhitelistAdminRemoved(account);
-    }
-}
-
-/**
- * @title WhitelistedRole
- * @dev Whitelisted accounts have been approved by a WhitelistAdmin to perform certain actions (e.g. participate in a
- * crowdsale). This role is special in that the only accounts that can add it are WhitelistAdmins (who can also remove
- * it), and not Whitelisteds themselves.
- */
-contract WhitelistedRole is Context, WhitelistAdminRole {
-    using Roles for Roles.Role;
-
-    event WhitelistedAdded(address indexed account);
-    event WhitelistedRemoved(address indexed account);
-
-    Roles.Role private _whitelisteds;
-
-    modifier onlyWhitelisted() {
-        require(isWhitelisted(_msgSender()), "WhitelistedRole: caller does not have the Whitelisted role");
-        _;
-    }
-
-    function isWhitelisted(address account) public view returns (bool) {
-        return _whitelisteds.has(account);
-    }
-
-    function addWhitelisted(address account) public onlyWhitelistAdmin {
-        _addWhitelisted(account);
-    }
-
-    function removeWhitelisted(address account) public onlyWhitelistAdmin {
-        _removeWhitelisted(account);
-    }
-
-    function renounceWhitelisted() public {
-        _removeWhitelisted(_msgSender());
-    }
-
-    function _addWhitelisted(address account) internal {
-        _whitelisteds.add(account);
-        emit WhitelistedAdded(account);
-    }
-
-    function _removeWhitelisted(address account) internal {
-        _whitelisteds.remove(account);
-        emit WhitelistedRemoved(account);
-    }
-}
-
-
-
-contract PirvateLunchpad is Ownable, Pausable, WhitelistedRole {
-
+contract PublicLaunchpad is Ownable, Pausable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
     using Address for address;
 
     //Whether to whitelist
-    bool public isWhite = true;
+    bool public constant isWhite = false;
 
-    uint public rate = 350; //1000
-    uint public lockRate = 500; // 1000
-    uint public USDCap = 140000 * 10**6;  // 140000 USDC
-    uint public TokenCap = 400000 * 10**18;
-    uint public maxGasPrice = 1000000000000;    // 1000 Gwei;
-    uint public personCap = 350 * 10**6; // 350 USDC
-    uint public personMinCap = 100 * 10**6; // 100 USDC
-    
+    uint256 public constant rate = 350; //1000
+    uint256 public constant lockRate = 500; // 1000
+    uint256 public constant USDCap = 140000 * 10**6; // 140000 USDC
+    uint256 public constant TokenCap = 400000 * 10**18;
+    uint256 public constant maxGasPrice = 1000000000000; // 1000 Gwei;
+    uint256 public constant personCap = 350 * 10**6; // Max 350 USDC
+    uint256 public constant personMinCap = 100 * 10**6; // Min 100 USDC
+
     //Time
-    uint public startTime;
-    uint public endTime;
-    uint public lockTime = 14 days;
-    uint public lockEndTime;
-    
+    uint256 public startTime;
+    uint256 public endTime;
+    uint256 public lockTime = 14 days;
+    uint256 public lockEndTime;
 
     IERC20 public USDC;
     IERC20 public Token;
 
-    uint public tokenBought;
-    uint public tokenLocked;
-    
-    address public fundWallet;
-    address public TokenWallet;
+    uint256 public tokenBought;
+    uint256 public tokenLocked;
 
-    mapping(address=>uint) public userBought;
-    mapping(address=>uint) public userTotalToken;
-    mapping(address=>uint) public userLocked;
-    mapping(address=>uint) public userUnLocked;
-    
+    address public fundWallet;
+    address public tokenWallet;
+
+    mapping(address => uint256) public userBought;
+    mapping(address => uint256) public userTotalToken;
+    mapping(address => uint256) public userLocked;
+    mapping(address => uint256) public userUnLocked;
+
     // 1. Here we need to record the time of a buyToken
 
     //Total USD Raised
-    uint public totalUSDRaised;
+    uint256 public totalUSDRaised;
     //Total Token Raised
-    uint public totalTokenRaised;
+    uint256 public totalTokenRaised;
 
-    constructor (
+    constructor(
         IERC20 _USDC,
         IERC20 _Token,
         address _fundWallet,
-        address _TokenWallet,
-        uint _startTime,
-        uint _endTime
-    ) public {
-        USDC =  _USDC;
-        Token =  _Token;
-        fundWallet  = _fundWallet;
-        TokenWallet =  _TokenWallet;
-        startTime =  _startTime;
-        endTime =  _endTime;
+        address _tokenWallet,
+        uint256 _startTime,
+        uint256 _endTime
+    ) {
+        require(address(_USDC) != address(0), "Invalid USDC token address");
+        require(address(_Token) != address(0), "Invalid token address");
+        require(
+            address(_fundWallet) != address(0),
+            "Invalid fund wallet address"
+        );
+        require(
+            address(_tokenWallet) != address(0),
+            "Invalid token wallet address"
+        );
+        require(
+            startTime > block.timestamp,
+            "Start time must be in the future"
+        );
+        require(
+            _endTime > _startTime,
+            "Start time must be greater than start time"
+        );
+        USDC = _USDC;
+        Token = _Token;
+        fundWallet = _fundWallet;
+        tokenWallet = _tokenWallet;
+        startTime = _startTime;
+        endTime = _endTime;
         lockEndTime = endTime.add(lockTime);
     }
 
-    event tokenTotal(uint indexed totalUSDRaised, uint indexed totalTokenRaised); 
+    event tokenTotal(
+        uint256 indexed totalUSDRaised,
+        uint256 indexed totalTokenRaised
+    );
 
-    function buyToken(uint amount) whenNotPaused public returns(bool){
-        // Verify the user whitelist
-        require(isWhitelisted(msg.sender),"Must be Whitelisted"); 
-        require(startTime <= now, "not Open yet.");
-        require(now <= endTime, "Finished.");
-        require(userBought[msg.sender].add(amount) <= personCap, "Personal Cap");
+    function buyToken(uint256 amount) external whenNotPaused returns (bool) {
+        require(startTime <= block.timestamp, "not Open yet.");
+        require(block.timestamp <= endTime, "Finished.");
+        require(
+            userBought[msg.sender].add(amount) <= personCap,
+            "Personal Cap"
+        );
         require(totalUSDRaised.add(amount) <= USDCap, "Total USD Cap");
-        require(amount.add(userBought[msg.sender]) >= personMinCap, "Min buy cap");
-        require(tx.gasprice <= maxGasPrice,"Crowdsale: beneficiary's max Gas Price exceeded");
+        require(
+            amount.add(userBought[msg.sender]) >= personMinCap,
+            "Min buy cap"
+        );
+        require(
+            tx.gasprice <= maxGasPrice,
+            "Crowdsale: beneficiary's max Gas Price exceeded"
+        );
 
-        USDC.transferFrom(msg.sender, fundWallet, amount);
+        USDC.safeTransferFrom(msg.sender, fundWallet, amount);
 
         tokenBought = amount.mul(1000).div(rate).mul(10**18).div(10**6); // Token
         tokenLocked = tokenBought.mul(lockRate).div(1000);
-        
+
         userLocked[msg.sender] = userLocked[msg.sender].add(tokenLocked);
-        userUnLocked[msg.sender] = userUnLocked[msg.sender].add(tokenLocked);
-        userTotalToken[msg.sender] = userUnLocked[msg.sender].add(userLocked[msg.sender]);
-        
+        userUnLocked[msg.sender] = userUnLocked[msg.sender]
+            .add(tokenBought)
+            .sub(tokenLocked);
+        userTotalToken[msg.sender] = userUnLocked[msg.sender].add(
+            userLocked[msg.sender]
+        );
+
         totalUSDRaised = totalUSDRaised.add(amount);
         totalTokenRaised = totalTokenRaised.add(tokenBought);
 
@@ -821,27 +862,32 @@ contract PirvateLunchpad is Ownable, Pausable, WhitelistedRole {
         return true;
     }
 
-    function withdraw() whenNotPaused public returns(bool) {
-        if (now >= lockEndTime) {
+    function withdraw() external whenNotPaused returns (bool) {
+        if (block.timestamp >= lockEndTime) {
             require(userLocked[msg.sender] > 0, "Has Lock Token");
-            uint256 tokenAmount = userUnLocked[msg.sender].add(userLocked[msg.sender]);
+            uint256 tokenAmount = userUnLocked[msg.sender].add(
+                userLocked[msg.sender]
+            );
             userUnLocked[msg.sender] = userLocked[msg.sender] = 0;
-            Token.safeTransferFrom(TokenWallet, msg.sender, tokenAmount);
-            
-        } else{
+            safeTransferToken(Token, tokenWallet, msg.sender, tokenAmount);
+        } else {
             require(userUnLocked[msg.sender] > 0, "Not to receive");
             uint256 tokenAmount = userUnLocked[msg.sender];
             userUnLocked[msg.sender] = 0;
-            Token.safeTransferFrom(TokenWallet, msg.sender, tokenAmount);
-        } 
-        return true;
-    }
-    function addMutiWhitelist(address[] memory addresses) onlyOwner public returns(bool) {
-        for (uint256 index = 0; index < addresses.length; index++) {
-            _addWhitelisted(addresses[index]);
+            safeTransferToken(Token, tokenWallet, msg.sender, tokenAmount);
         }
+
         return true;
     }
-    
-    
+
+    function safeTransferToken(
+        IERC20 token,
+        address from,
+        address to,
+        uint256 amount
+    ) private {
+        uint256 balance = token.balanceOf(from);
+        if (balance >= amount) token.safeTransferFrom(from, to, amount);
+        else token.safeTransferFrom(from, to, balance);
+    }
 }
