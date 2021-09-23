@@ -10,12 +10,12 @@
 ██╔═══╝ ██║   ██║██║     ██╔═██╗ ██╔══██║██╔══╝   ██╔██╗
 ██║     ╚██████╔╝███████╗██║  ██╗██║  ██║███████╗██╔╝ ██╗
 ╚═╝      ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝
+/**
+ *Submitted for verification at Etherscan.io on 2020-09-15
+ */
 
-                     www.polkaex.io
 
-*/
-
-pragma solidity ^0.5.16;
+pragma solidity 0.7.0;
 pragma experimental ABIEncoderV2;
 
 // Subject to the MIT license.
@@ -235,10 +235,10 @@ contract PKEX {
     /// @notice Total number of tokens in circulation
     uint256 public totalSupply = 100_000_000e18; // 100 million PKEX
 
-    /// @notice Allowance amounts on behalf of others
+    // Allowance amounts on behalf of others
     mapping(address => mapping(address => uint96)) internal allowances;
 
-    /// @notice Official record of token balances for each account
+    // Official record of token balances for each account
     mapping(address => uint96) internal balances;
 
     /// @notice The standard EIP-20 transfer event
@@ -255,7 +255,7 @@ contract PKEX {
      * @notice Construct a new Uni token
      * @param account The initial account to grant all the tokens
      */
-    constructor(address account) public {
+    constructor(address account) {
         require(account != address(0), "PKEX::constructor:Zero address");
         balances[account] = uint96(totalSupply);
         emit Transfer(address(0), account, totalSupply);

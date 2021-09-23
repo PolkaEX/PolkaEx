@@ -15,7 +15,7 @@
 
 */
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.7.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -104,8 +104,6 @@ interface IERC20 {
     );
 }
 
-pragma solidity >=0.6.0 <0.8.0;
-
 /**
  * @dev Standard math utilities missing in the Solidity language.
  */
@@ -133,8 +131,6 @@ library Math {
         return (a / 2) + (b / 2) + (((a % 2) + (b % 2)) / 2);
     }
 }
-
-pragma solidity >=0.6.0 <0.8.0;
 
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
@@ -379,8 +375,6 @@ library SafeMath {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
-
 /**
  * @title SafeERC20
  * @dev Wrappers around ERC20 operations that throw on failure (when the token
@@ -505,8 +499,6 @@ library SafeERC20 {
         }
     }
 }
-
-pragma solidity >=0.6.2 <0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -758,8 +750,6 @@ library Address {
     }
 }
 
-pragma solidity >=0.6.0 <0.8.0;
-
 /**
  * @dev Contract module that helps prevent reentrant calls to a function.
  *
@@ -793,7 +783,7 @@ abstract contract ReentrancyGuard {
 
     uint256 private _status;
 
-    constructor() internal {
+    constructor() {
         _status = _NOT_ENTERED;
     }
 
@@ -819,8 +809,6 @@ abstract contract ReentrancyGuard {
     }
 }
 
-pragma solidity ^0.6.6;
-
 abstract contract RewardsDistributionRecipient {
     address public rewardsDistribution;
 
@@ -834,8 +822,6 @@ abstract contract RewardsDistributionRecipient {
         _;
     }
 }
-
-pragma solidity ^0.6.6;
 
 // forked from https://github.com/SetProtocol/index-coop-contracts/blob/master/contracts/staking/StakingRewardsV2.sol
 // NOTE: V2 allows setting of rewardsDuration in constructor
@@ -853,7 +839,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     uint256 public lastUpdateTime;
     uint256 public rewardPerTokenStored;
     uint256 public unstakingPeriod = 5 days;
-    uint256 external rewardIndex = 0;
+    uint256 public rewardIndex = 0;
     uint256 private _poolId = 0;
 
     mapping(address => uint256) public userRewardPerTokenPaid;
@@ -882,13 +868,13 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         address _rewardsToken,
         address _stakingToken,
         uint256 _rewardsDuration
-    ) public {
-        requrie(
+    ) {
+        require(
             _rewardsDistribution != address(0),
             "Invalid distribution address"
         );
-        requrie(_rewardsToken != address(0), "Invalid rewards token address");
-        requrie(_stakingToken != address(0), "Invalid staking token address");
+        require(_rewardsToken != address(0), "Invalid rewards token address");
+        require(_stakingToken != address(0), "Invalid staking token address");
         require(_rewardsDuration > 1 minutes, "Invalid rewards duration");
         rewardsToken = IERC20(_rewardsToken);
         stakingToken = IERC20(_stakingToken);
@@ -924,7 +910,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         return Math.min(block.timestamp, periodFinish);
     }
 
-    function rewardPerToken() external view returns (uint256) {
+    function rewardPerToken() private view returns (uint256) {
         if (_totalSupply == 0) {
             return rewardPerTokenStored;
         }
@@ -938,7 +924,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
             );
     }
 
-    function earned(address account) external view returns (uint256) {
+    function earned(address account) private view returns (uint256) {
         return
             _balances[account]
                 .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
@@ -982,10 +968,10 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
                 continue;
             }
 
-            uint256 rewards = pool.rewardRate.mul(
+            uint256 _rewards = pool.rewardRate.mul(
                 block.timestamp.sub(pool.from)
             );
-            totalRewarded = totalRewarded.add(rewards);
+            totalRewarded = totalRewarded.add(_rewards);
         }
     }
 
@@ -1003,7 +989,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     }
 
     function unstake(uint256 amount)
-        external
+        public
         nonReentrant
         updateReward(msg.sender)
     {
@@ -1117,7 +1103,7 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
         address to,
         uint256 tokenAmount
     ) external onlyRewardsDistribution {
-        requrie(tokenAddress != address(0), "Invalid token address");
+        require(tokenAddress != address(0), "Invalid token address");
         require(
             tokenAddress != address(stakingToken),
             "Cannot withdraw the staking token"
@@ -1178,9 +1164,6 @@ contract StakingRewardsV2 is RewardsDistributionRecipient, ReentrancyGuard {
     event UnstakePeriodUpdated(uint256 oldValue, uint256 newValue);
 }
 
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
 /// @title A StakingRewards contract for earning PKEX with staked PKEX/USDC LP tokens
 /// @author PKEX Staking
 /// @notice deposited LP tokens will earn PKEX over time at a linearly decreasing rate
@@ -1190,5 +1173,5 @@ contract PkexStakingRewards is StakingRewardsV2 {
         address _pkex,
         address _pkexUsdcLp,
         uint256 _duration
-    ) public StakingRewardsV2(_distributor, _pkex, _pkexUsdcLp, _duration) {}
+    ) StakingRewardsV2(_distributor, _pkex, _pkexUsdcLp, _duration) {}
 }

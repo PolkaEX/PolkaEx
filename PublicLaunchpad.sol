@@ -15,7 +15,7 @@
 
 */
 
-pragma solidity >0.5.0;
+pragma solidity 0.7.0;
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -745,7 +745,7 @@ contract PublicLaunchpad is Ownable, Pausable {
     using Address for address;
 
     //Whether to whitelist
-    bool external constant isWhite = false;
+    bool public constant isWhite = false;
 
     uint256 public constant rate = 350; //1000
     uint256 public constant lockRate = 500; // 1000
@@ -801,7 +801,7 @@ contract PublicLaunchpad is Ownable, Pausable {
             "Invalid token wallet address"
         );
         require(
-            startTime > block.timestamp,
+            _startTime > block.timestamp,
             "Start time must be in the future"
         );
         require(
